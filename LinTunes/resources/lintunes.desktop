@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LinTunes
+GenericName=Music Manager
+Comment=LinTunes — iTunes-equivalent music manager with iPod sync and CD support
+Exec=lintunes
+Icon=multimedia-player
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+Keywords=music;ipod;sync;cd;rip;burn;
+MimeType=audio/mpeg;audio/mp4;audio/flac;audio/ogg;audio/wav;audio/aiff;
+StartupNotify=true
