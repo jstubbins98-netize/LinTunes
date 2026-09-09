@@ -6,6 +6,7 @@ A fully-featured iTunes equivalent for Linux written in C++17, using GTK3 for th
 
 - **Music library** — import audio files and folders, browse by artist/album/genre/playlist
 - **Audio playback** — full playback via GStreamer: play, pause, seek, shuffle, repeat
+- **Internet radio** — stream HTTP/HTTPS radio stations through libVLC
 - **SQLite database** — persistent library at `~/.local/share/lintunes/library.db`
 - **iPod sync** — connect any iPod (classic, nano, mini, touch) via libgpod, add/remove tracks and sync playlists
 - **Guarded iPod restore** — restore iPod touch from IPSW, restore disk-mode iPod firmware, or erase and recreate its music database
@@ -37,6 +38,7 @@ sudo apt install -y \
     libgpod-dev \
     libcdio-dev libcdio-paranoia-dev \
     libcddb2-dev \
+    libvlc-dev vlc-plugin-base \
     lame flac vorbis-tools ffmpeg wodim
 ```
 
@@ -54,6 +56,7 @@ sudo dnf install -y \
     libgpod-devel \
     libcdio-devel libcdio-paranoia-devel \
     libcddb-devel \
+    vlc-devel \
     lame flac vorbis-tools ffmpeg wodim
 ```
 
@@ -70,6 +73,7 @@ sudo pacman -S --needed \
     libgpod \
     libcdio libcdio-paranoia \
     libcddb \
+    vlc \
     lame flac vorbis-tools ffmpeg dvd+rw-tools cdrtools
 ```
 
@@ -97,6 +101,14 @@ Or after `make install`:
 ```bash
 lintunes
 ```
+
+## Internet Radio
+
+1. Click **📻 Internet Radio** in the toolbar.
+2. Choose a built-in station such as **KQED Public Radio**, **KEXP**, or
+   **SomaFM Groove Salad**, or paste a custom HTTP/HTTPS stream URL.
+3. Click **Play**. LinTunes stops local playback and starts the stream with libVLC.
+4. Use the normal volume slider, or reopen the dialog and choose **Stop Radio**.
 
 ## iPod Setup
 
@@ -185,6 +197,7 @@ LinTunes/
     ├── Database.h/cpp      — SQLite3 library database
     ├── Library.h/cpp       — Music library (import, search, playlists)
     ├── AudioPlayer.h/cpp   — GStreamer playback engine
+    ├── RadioPlayer.h/cpp   — libVLC internet radio playback
     ├── iPodSync.h/cpp      — libgpod iPod sync
     ├── CDManager.h/cpp     — CD ripping (libcdio-paranoia) and burning (wodim)
     └── MainWindow.h/cpp    — GTK3 main application window
@@ -192,4 +205,4 @@ LinTunes/
 
 ## License
 
-Mozilla Public License Version 2.0
+GPL-3.0 or later
