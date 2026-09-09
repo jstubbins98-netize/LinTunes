@@ -205,4 +205,4 @@ LinTunes/
 
 ## License
 
-GPL-3.0 or later
+GNU-2.0 or later
