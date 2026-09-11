@@ -1,208 +1,191 @@
-# LinTunes
+# LinTunes Family
 
-A fully-featured iTunes equivalent for Linux written in C++17, using GTK3 for the GUI.
+LinTunes is an open-source, iTunes-style desktop music manager written in
+C++17 with GTK3. This repository contains separate editions for Linux, macOS,
+and Windows.
 
-## Features
+## Choose Your Version
 
-- **Music library** — import audio files and folders, browse by artist/album/genre/playlist
-- **Audio playback** — full playback via GStreamer: play, pause, seek, shuffle, repeat
-- **Internet radio** — stream HTTP/HTTPS radio stations through libVLC
-- **SQLite database** — persistent library at `~/.local/share/lintunes/library.db`
-- **iPod sync** — connect any iPod (classic, nano, mini, touch) via libgpod, add/remove tracks and sync playlists
-- **Guarded iPod restore** — restore iPod touch from IPSW, restore disk-mode iPod firmware, or erase and recreate its music database
-- **CD ripping** — paranoia-mode ripping to FLAC, MP3, OGG, AAC, or WAV with CDDB metadata
-- **CD burning** — burn selected library tracks to a blank audio CD
-- **Apple SuperDrive** — works as a standard USB CD drive on Linux; auto-detected alongside `/dev/sr*` devices
-- **Playlists** — create, populate, and delete playlists; sync playlists to iPod
-- **Search** — real-time library search across title, artist, album, and genre
-- **Right-click context menu** — play, sync to iPod, remove from library, delete file
+| Operating system | Edition | Directory | Main executable | Status |
+|---|---|---|---|---|
+| Linux | **LinTunes** | [`LinTunes/`](LinTunes/) | `lintunes` | Full-featured primary edition |
+| macOS | **MacTunes** | [`MacTunes/`](MacTunes/) | `mactunes` | Native paths and macOS device handling; some hardware features are optional |
+| Windows | **WinTunes** | [`WinTunes/`](WinTunes/) | `WinTunes.exe` | Native Windows paths; iPod and CD features are disabled by default |
 
-## Supported Audio Formats
+Each edition has its own source tree, CMake configuration, documentation, and
+platform build scripts. Changes made to one edition are not automatically
+copied to the other editions.
 
-MP3, M4A/AAC, FLAC, OGG Vorbis, WAV, AIFF, WMA, Opus, APE, ALAC
+## Shared Features
 
-## Dependencies
+All three editions share the same core music-management interface:
 
-### Ubuntu / Debian
+- Import individual audio files or complete folders
+- Validate imported audio and reject AppleDouble and unreadable files
+- Browse and search by title, artist, album, and genre
+- Create and manage playlists
+- Play local music with GStreamer
+- Play, pause, seek, shuffle, repeat, and control volume
+- Read track metadata with TagLib
+- Store the music library in SQLite
+- Stream internet radio through libVLC when enabled
+- Use built-in KQED, KEXP, and SomaFM presets
 
-```bash
-sudo apt update
-sudo apt install -y \
-    build-essential cmake pkg-config \
-    libgtk-3-dev \
-    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-    gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly gstreamer1.0-libav \
-    libtag1-dev \
-    libsqlite3-dev \
-    libgpod-dev \
-    libcdio-dev libcdio-paranoia-dev \
-    libcddb2-dev \
-    libvlc-dev vlc-plugin-base \
-    lame flac vorbis-tools ffmpeg wodim
-```
+Supported audio formats include MP3, M4A/AAC, FLAC, OGG Vorbis, WAV, AIFF,
+WMA, Opus, APE, and ALAC, subject to the codecs installed on the host system.
 
-### Fedora / RHEL
+## Platform Support
 
-```bash
-sudo dnf install -y \
-    gcc-c++ cmake pkgconfig \
-    gtk3-devel \
-    gstreamer1-devel gstreamer1-plugins-base-devel \
-    gstreamer1-plugins-good gstreamer1-plugins-bad-free \
-    gstreamer1-plugins-ugly gstreamer1-libav \
-    taglib-devel \
-    sqlite-devel \
-    libgpod-devel \
-    libcdio-devel libcdio-paranoia-devel \
-    libcddb-devel \
-    vlc-devel \
-    lame flac vorbis-tools ffmpeg wodim
-```
+### LinTunes for Linux
 
-### Arch Linux
+LinTunes is the primary and most complete edition. Depending on installed
+system dependencies, it supports:
+
+- iPod classic, nano, mini, shuffle, and mounted iPod touch devices through
+  libgpod
+- Mac- and Windows-formatted disk-mode iPods
+- Playlist and track synchronization
+- Guarded iPod touch IPSW restoration through external libimobiledevice tools
+- Safe music-database reset for connected disk-mode iPods
+- Audio CD detection and ripping
+- CDDB metadata lookup
+- Audio CD burning
+- Apple SuperDrive detection after the drive is unlocked by Linux
+
+See [LinTunes/README.md](LinTunes/README.md) for dependencies and build
+instructions, or [LinTunes/manual.md](LinTunes/manual.md) for the complete user
+manual.
+
+Quick build:
 
 ```bash
-sudo pacman -S --needed \
-    base-devel cmake \
-    gtk3 \
-    gstreamer gst-plugins-base gst-plugins-good \
-    gst-plugins-bad gst-plugins-ugly gst-libav \
-    taglib \
-    sqlite \
-    libgpod \
-    libcdio libcdio-paranoia \
-    libcddb \
-    vlc \
-    lame flac vorbis-tools ffmpeg dvd+rw-tools cdrtools
-```
-
-## Building
-
-```bash
-git clone <this-repo>
 cd LinTunes
-
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
-
-# Optional: install system-wide
-sudo make install
-```
-
-## Running
-
-```bash
+mkdir -p build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
 ./build/lintunes
 ```
 
-Or after `make install`:
-```bash
-lintunes
-```
+### MacTunes for macOS
 
-## Internet Radio
+MacTunes uses macOS-specific locations and device behavior:
 
-1. Click **📻 Internet Radio** in the toolbar.
-2. Choose a built-in station such as **KQED Public Radio**, **KEXP**, or
-   **SomaFM Groove Salad**, or paste a custom HTTP/HTTPS stream URL.
-3. Click **Play**. LinTunes stops local playback and starts the stream with libVLC.
-4. Use the normal volume slider, or reopen the dialog and choose **Stop Radio**.
+- Application data: `~/Library/Application Support/MacTunes`
+- Music folder: `~/Music`
+- Mounted-volume discovery under `/Volumes`
+- Optical-disc eject through `drutil`
+- macOS-compatible filesystem flushing
 
-## iPod Setup
+The main library and playback features are supported. iPod synchronization is
+optional because libgpod is not normally available from Homebrew core. CD
+ripping depends on the available libcdio packages and optical drive. Linux
+`wodim` CD burning is intentionally disabled.
 
-1. Plug in your iPod via USB.
-2. Let your system auto-mount it (usually under `/media/$USER/<iPod name>` or `/run/media/$USER/<iPod name>`).
-3. In LinTunes, go to **Device → Connect iPod…** — it will auto-detect the mount point.
-4. Select tracks in the library and choose **Device → Sync to iPod** (or right-click → Add to iPod).
-5. After syncing, the iPod database is written automatically.
-
-> **Note:** For newer iPod touch/nano models, you may need `libimobiledevice` and `ifuse` to mount the device first:
-> ```bash
-> sudo apt install libimobiledevice-utils ifuse
-> idevicepair pair
-> ifuse ~/ipod
-> ```
-
-### Restoring an iPod
-
-**Device → Restore iPod from Firmware…** supports two separate workflows:
-
-- iPod touch: an Apple-signed `.ipsw` file via `idevicerestore`, targeted to
-  the single UDID reported by `idevice_id`.
-- Classic/nano/mini/shuffle firmware flashing is intentionally unavailable:
-  stock `ipodpatcher` cannot bind a write to the device selected in LinTunes.
-
-Install the matching restore tool separately. Restores erase the device and require
-typed confirmation. LinTunes never accepts a manually entered device path and never
-falls back to an auto-selected disk for destructive firmware writes.
-
-**Device → Erase and Reset Music Database…** erases music/playlists and recreates
-the libgpod database on an already-connected disk-mode iPod. It does not flash
-firmware or repartition the disk.
-
-## Apple SuperDrive
-
-The Apple SuperDrive is a USB optical drive. On Linux it requires a one-time udev rule or the `apple-superdrive` utility to unlock the drive:
+Homebrew is required by the supplied build helper. It checks dependencies and
+prints the required installation command without installing packages
+automatically.
 
 ```bash
-# Install sg3-utils
-sudo apt install sg3-utils
-
-# Send the magic byte to unlock the drive (run once after each plug-in)
-sg_raw /dev/sr0 EA 00 00 00 00 00 01
-
-# Or install apple-superdrive-enabler (AUR on Arch, manual on others)
+cd MacTunes
+./buildMac.sh
+./build/mactunes
 ```
 
-After unlocking, the drive appears as `/dev/sr0` (or similar) and LinTunes detects it automatically alongside any other CD drives.
+See [MacTunes/README.md](MacTunes/README.md) and
+[MacTunes/manual.md](MacTunes/manual.md) for full details.
 
-You can also create a udev rule to unlock it automatically on plug-in:
+### WinTunes for Windows
 
-```udev
-# /etc/udev/rules.d/71-apple-superdrive.rules
-ACTION=="add", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="8406", \
-    RUN+="/usr/bin/sg_raw /dev/$kernel EA 00 00 00 00 00 01"
+WinTunes is designed for native Windows builds using MSYS2 UCRT64 and MinGW.
+It uses:
+
+- `%LOCALAPPDATA%\WinTunes` for application data
+- The Windows Known Folder API for the user's Music directory
+- UTF-8-aware filesystem paths
+- A native `WinTunes.exe` target
+
+The standard Windows build supports library management, playlists, local
+playback, searching, metadata, and SQLite persistence. Internet radio can be
+enabled when a compatible libVLC development package is supplied.
+
+libgpod and the Linux optical-disc stack are not available in the standard
+MSYS2 UCRT64 repositories. Therefore, iPod synchronization, iPod restoration,
+CD ripping, and CD burning are disabled by default rather than presented as
+working features.
+
+From PowerShell:
+
+```powershell
+cd WinTunes
+.\buildWindows.ps1
 ```
 
-## CD Ripping
+Or from an MSYS2 UCRT64 shell:
 
-1. Insert an audio CD.
-2. Go to **Device → Rip CD…**
-3. Choose output folder and format (FLAC recommended for lossless archival).
-4. Click Rip — tracks are saved to `<output>/<Artist>/<Album>/NN - Title.flac` and imported into your library.
-
-Metadata is fetched automatically from CDDB (gnudb.gnudb.org).
-
-## CD Burning
-
-1. Insert a blank CD-R.
-2. Select tracks in the library (up to ~74 minutes).
-3. Go to **Device → Burn Disc…** and confirm.
-
-Burning requires `wodim` (or `cdrecord`) to be installed.
-
-## Project Structure
-
+```bash
+cd WinTunes
+./msys2-build.sh
 ```
-LinTunes/
-├── CMakeLists.txt          — CMake build definition
-├── README.md               — This file
+
+The Windows executable is produced at `WinTunes/build-windows/WinTunes.exe`.
+See [WinTunes/README.md](WinTunes/README.md) and
+[WinTunes/manual.md](WinTunes/manual.md) for complete setup instructions and
+limitations.
+
+## Optional Feature Switches
+
+MacTunes and WinTunes can be configured without platform-specific optional
+libraries.
+
+MacTunes:
+
+```bash
+cmake -S MacTunes -B MacTunes/build \
+  -DMACTUNES_ENABLE_IPOD=OFF \
+  -DMACTUNES_ENABLE_CD=OFF \
+  -DMACTUNES_ENABLE_RADIO=OFF
+```
+
+WinTunes:
+
+```bash
+cmake -S WinTunes -B WinTunes/build \
+  -DWINTUNES_ENABLE_IPOD=OFF \
+  -DWINTUNES_ENABLE_CD=OFF \
+  -DWINTUNES_ENABLE_RADIO=OFF
+```
+
+When a feature is disabled, its implementation uses an explicit unsupported
+response instead of silently attempting platform-incompatible operations.
+
+## Repository Layout
+
+```text
+.
+├── LinTunes/       Linux edition
+├── MacTunes/       macOS edition
+├── WinTunes/       Windows edition
+└── README.md       Edition overview
+```
+
+Each edition contains:
+
+```text
+<Edition>/
+├── CMakeLists.txt
+├── README.md
+├── manual.md
 ├── resources/
-│   └── lintunes.desktop    — XDG desktop entry
 └── src/
-    ├── main.cpp            — Entry point, initialisation
-    ├── Track.h             — Track data model (POD struct)
-    ├── Database.h/cpp      — SQLite3 library database
-    ├── Library.h/cpp       — Music library (import, search, playlists)
-    ├── AudioPlayer.h/cpp   — GStreamer playback engine
-    ├── RadioPlayer.h/cpp   — libVLC internet radio playback
-    ├── iPodSync.h/cpp      — libgpod iPod sync
-    ├── CDManager.h/cpp     — CD ripping (libcdio-paranoia) and burning (wodim)
-    └── MainWindow.h/cpp    — GTK3 main application window
 ```
+
+## Safety
+
+iPod firmware restore and music-database reset operations can erase data.
+Destructive operations require confirmation and must remain bound to the
+selected physical device. Never disconnect an iPod while tracks or its music
+database are being written.
 
 ## License
 
-GPL-2.0
+GPL-3.0 or later.
