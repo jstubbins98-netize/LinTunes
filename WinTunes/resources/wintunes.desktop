@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=WinTunes
+GenericName=Music Manager
+Comment=WinTunes — music manager with playback and library support
+Exec=wintunes
+Icon=multimedia-player
+Terminal=false
+Categories=AudioVideo;Audio;Player;

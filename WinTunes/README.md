@@ -1,0 +1,234 @@
+# WinTunes
+
+A fully-featured iTunes equivalent for Linux written in C++17, using GTK3 for the GUI.
+
+## Features
+
+- **Music library** — import audio files and folders, browse by artist/album/genre/playlist
+- **Audio playback** — full playback via GStreamer: play, pause, seek, shuffle, repeat
+- **Internet radio** — stream HTTP/HTTPS radio stations through libVLC
+- **SQLite database** — persistent library at `~/.local/share/wintunes/library.db`
+- **iPod sync** — connect any iPod (classic, nano, mini, touch) via libgpod, add/remove tracks and sync playlists
+- **Guarded iPod restore** — restore iPod touch from IPSW, restore disk-mode iPod firmware, or erase and recreate its music database
+- **CD ripping** — paranoia-mode ripping to FLAC, MP3, OGG, AAC, or WAV with CDDB metadata
+- **CD burning** — burn selected library tracks to a blank audio CD
+- **Apple SuperDrive** — works as a standard USB CD drive on Linux; auto-detected alongside `/dev/sr*` devices
+- **Playlists** — create, populate, and delete playlists; sync playlists to iPod
+- **Search** — real-time library search across title, artist, album, and genre
+- **Right-click context menu** — play, sync to iPod, remove from library, delete file
+
+## Supported Audio Formats
+
+MP3, M4A/AAC, FLAC, OGG Vorbis, WAV, AIFF, WMA, Opus, APE, ALAC
+
+## Dependencies
+
+### Ubuntu / Debian
+
+```bash
+sudo apt update
+sudo apt install -y \
+    build-essential cmake pkg-config \
+    libgtk-3-dev \
+    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+    gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly gstreamer1.0-libav \
+    libtag1-dev \
+    libsqlite3-dev \
+    libgpod-dev \
+    libcdio-dev libcdio-paranoia-dev \
+    libcddb2-dev \
+    libvlc-dev vlc-plugin-base \
+    lame flac vorbis-tools ffmpeg wodim
+```
+
+### Fedora / RHEL
+
+```bash
+sudo dnf install -y \
+    gcc-c++ cmake pkgconfig \
+    gtk3-devel \
+    gstreamer1-devel gstreamer1-plugins-base-devel \
+    gstreamer1-plugins-good gstreamer1-plugins-bad-free \
+    gstreamer1-plugins-ugly gstreamer1-libav \
+    taglib-devel \
+    sqlite-devel \
+    libgpod-devel \
+    libcdio-devel libcdio-paranoia-devel \
+    libcddb-devel \
+    vlc-devel \
+    lame flac vorbis-tools ffmpeg wodim
+```
+
+### Arch Linux
+
+```bash
+sudo pacman -S --needed \
+    base-devel cmake \
+    gtk3 \
+    gstreamer gst-plugins-base gst-plugins-good \
+    gst-plugins-bad gst-plugins-ugly gst-libav \
+    taglib \
+    sqlite \
+    libgpod \
+    libcdio libcdio-paranoia \
+    libcddb \
+    vlc \
+    lame flac vorbis-tools ffmpeg dvd+rw-tools cdrtools
+```
+
+## Building
+
+```bash
+git clone <this-repo>
+cd WinTunes
+
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+
+# Optional: install system-wide
+sudo make install
+```
+
+### Windows (MSYS2 UCRT64)
+
+WinTunes can be built natively with GTK3 and GStreamer in an MSYS2 UCRT64
+environment. From PowerShell run `.\buildWindows.ps1`, or open an MSYS2
+UCRT64 shell and run `./msys2-build.sh`. The scripts install the real
+`mingw-w64-ucrt-x86_64-*` packages, configure with MinGW, and produce
+`build-windows/WinTunes.exe`.
+
+The scripts explicitly configure
+`-DWINTUNES_ENABLE_IPOD=OFF -DWINTUNES_ENABLE_CD=OFF
+-DWINTUNES_ENABLE_RADIO=OFF`. These options can be changed when optional
+libraries are supplied on a platform that supports the feature; CMake options
+are also available on Linux.
+
+The Windows build uses `%LOCALAPPDATA%\WinTunes\library.db` and the Windows
+Known Folder Music directory (including non-ASCII paths). libgpod and the
+Linux CD device stack are not available in standard MSYS2 repositories, so
+iPod sync/restore and CD ripping/burning are explicitly unavailable in that
+build. Playback, library management, playlists, TagLib metadata, SQLite, and
+internet radio (when libVLC is installed separately) remain supported.
+
+## Running
+
+```bash
+./build/wintunes
+```
+
+Or after `make install`:
+```bash
+wintunes
+```
+
+## Internet Radio
+
+1. Click **📻 Internet Radio** in the toolbar.
+2. Choose a built-in station such as **KQED Public Radio**, **KEXP**, or
+   **SomaFM Groove Salad**, or paste a custom HTTP/HTTPS stream URL.
+3. Click **Play**. WinTunes stops local playback and starts the stream with libVLC.
+4. Use the normal volume slider, or reopen the dialog and choose **Stop Radio**.
+
+## iPod Setup
+
+1. Plug in your iPod via USB.
+2. Let your system auto-mount it (usually under `/media/$USER/<iPod name>` or `/run/media/$USER/<iPod name>`).
+3. In WinTunes, go to **Device → Connect iPod…** — it will auto-detect the mount point.
+4. Select tracks in the library and choose **Device → Sync to iPod** (or right-click → Add to iPod).
+5. After syncing, the iPod database is written automatically.
+
+Windows/PC-formatted FAT32 iPods are supported. WinTunes accepts devices that
+do not expose a libgpod UUID, resolves control-directory capitalization through
+libgpod, writes the additional database required by iPod Shuffle models, and
+flushes FAT filesystem changes after each completed sync.
+
+> **Note:** For newer iPod touch/nano models, you may need `libimobiledevice` and `ifuse` to mount the device first:
+> ```bash
+> sudo apt install libimobiledevice-utils ifuse
+> idevicepair pair
+> ifuse ~/ipod
+> ```
+
+### Restoring an iPod
+
+**Device → Restore iPod from Firmware…** supports two separate workflows:
+
+- iPod touch: an Apple-signed `.ipsw` file via `idevicerestore`, targeted to
+  the single UDID reported by `idevice_id`.
+- Classic/nano/mini/shuffle firmware flashing is intentionally unavailable:
+  stock `ipodpatcher` cannot bind a write to the device selected in WinTunes.
+
+Install the matching restore tool separately. Restores erase the device and require
+typed confirmation. WinTunes never accepts a manually entered device path and never
+falls back to an auto-selected disk for destructive firmware writes.
+
+**Device → Erase and Reset Music Database…** erases music/playlists and recreates
+the libgpod database on an already-connected disk-mode iPod. It does not flash
+firmware or repartition the disk.
+
+## Apple SuperDrive
+
+The Apple SuperDrive is a USB optical drive. On Linux it requires a one-time udev rule or the `apple-superdrive` utility to unlock the drive:
+
+```bash
+# Install sg3-utils
+sudo apt install sg3-utils
+
+# Send the magic byte to unlock the drive (run once after each plug-in)
+sg_raw /dev/sr0 EA 00 00 00 00 00 01
+
+# Or install apple-superdrive-enabler (AUR on Arch, manual on others)
+```
+
+After unlocking, the drive appears as `/dev/sr0` (or similar) and WinTunes detects it automatically alongside any other CD drives.
+
+You can also create a udev rule to unlock it automatically on plug-in:
+
+```udev
+# /etc/udev/rules.d/71-apple-superdrive.rules
+ACTION=="add", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="8406", \
+    RUN+="/usr/bin/sg_raw /dev/$kernel EA 00 00 00 00 00 01"
+```
+
+## CD Ripping
+
+1. Insert an audio CD.
+2. Go to **Device → Rip CD…**
+3. Choose output folder and format (FLAC recommended for lossless archival).
+4. Click Rip — tracks are saved to `<output>/<Artist>/<Album>/NN - Title.flac` and imported into your library.
+
+Metadata is fetched automatically from CDDB (gnudb.gnudb.org).
+
+## CD Burning
+
+1. Insert a blank CD-R.
+2. Select tracks in the library (up to ~74 minutes).
+3. Go to **Device → Burn Disc…** and confirm.
+
+Burning requires `wodim` (or `cdrecord`) to be installed.
+
+## Project Structure
+
+```
+WinTunes/
+├── CMakeLists.txt          — CMake build definition
+├── README.md               — This file
+├── resources/
+│   └── wintunes.desktop    — XDG desktop entry
+└── src/
+    ├── main.cpp            — Entry point, initialisation
+    ├── Track.h             — Track data model (POD struct)
+    ├── Database.h/cpp      — SQLite3 library database
+    ├── Library.h/cpp       — Music library (import, search, playlists)
+    ├── AudioPlayer.h/cpp   — GStreamer playback engine
+    ├── RadioPlayer.h/cpp   — libVLC internet radio playback
+    ├── iPodSync.h/cpp      — libgpod iPod sync
+    ├── CDManager.h/cpp     — CD ripping (libcdio-paranoia) and burning (wodim)
+    └── MainWindow.h/cpp    — GTK3 main application window
+```
+
+## License
+
+GPL-3.0 or later
