@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=MacTunes
+Comment=MacTunes music manager with iPod and CD support
+Exec=mactunes
+Terminal=false
+Categories=AudioVideo;Audio;Player;
