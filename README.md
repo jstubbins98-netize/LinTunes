@@ -188,4 +188,4 @@ database are being written.
 
 ## License
 
-GPL-3.0 or later.
+GPL-2.0 or later.
