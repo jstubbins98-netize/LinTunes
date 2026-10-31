@@ -1,0 +1,13 @@
+Architecture: amd64
+Depends: gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, vlc-plugin-base, udisks2, dosfstools
+Description: Music library manager with iPod sync and CD support
+ LinTunes is a GTK3 desktop music manager with GStreamer playback, libVLC internet radio, playlists, Windows/FAT iPod synchronization, and CD ripping and burning.
+Maintainer: LinTunes local build <lintunes@localhost>
+Package: lintunes
+Priority: optional
+Recommends: gstreamer1.0-libav, flac, lame, vorbis-tools, ffmpeg, wodim
+Section: sound
+Suggests: idevicerestore, libimobiledevice-utils
+Version: 1.0.0-1
+Installed-Size: 514
+
