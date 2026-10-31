@@ -81,7 +81,7 @@ sudo pacman -S --needed \
 ## Building
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/jstubbins98-netize/LinTunes.git
 cd LinTunes
 
 mkdir build && cd build
