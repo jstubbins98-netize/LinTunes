@@ -81,7 +81,7 @@ sudo pacman -S --needed \
 ## Building
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/jstubbins98-netize/LinTunes.git
 cd LinTunes
 
 mkdir build && cd build
@@ -91,115 +91,6 @@ make -j$(nproc)
 # Optional: install system-wide
 sudo make install
 ```
-
-## Install through your Linux package manager
-
-For publishing source releases, AUR recipes, or public apt/dnf repositories,
-see [Publishing LinTunes](PUBLISHING.md). This is separate from creating a local
-installer below.
-
-After building LinTunes **on the computer/distribution where it will be
-installed**, create a local package:
-
-```bash
-cd LinTunes
-bash packageLinux.sh
-```
-
-The helper detects your distribution and packages the existing `build/lintunes`
-executable. It does not use `sudo`, install the package, or install build tools.
-Packages are saved in `generated-artifacts/packages/`. It prints the installation
-command when finished.
-
-You can also build and package in one step:
-
-```bash
-bash buildPod.sh --package
-# If build dependencies are already installed:
-bash buildPod.sh --skip-deps --package
-```
-
-| Distribution | Output | Additional packaging tool | Install the generated file |
-|---|---|---|---|
-| Debian, Ubuntu, Linux Mint | `.deb` | `dpkg-dev` | `sudo apt install ./generated-artifacts/packages/lintunes_*.deb` |
-| Fedora, RHEL and compatible distributions | `.rpm` | `rpm-build` | `sudo dnf install ./generated-artifacts/packages/lintunes-*.rpm` |
-| openSUSE | `.rpm` | `rpm-build` | `sudo zypper install ./generated-artifacts/packages/lintunes-*.rpm` |
-| Arch, Manjaro | `.pkg.tar.zst` (or makepkg's configured compression) | `base-devel` | `sudo pacman -U ./generated-artifacts/packages/lintunes-*.pkg.tar.*` |
-
-For older RPM distributions, `yum install ./path/to/package.rpm` can be used
-instead of dnf. If several package versions are in the output directory, use
-the exact filename rather than the wildcard.
-
-To select a format or use a different build directory:
-
-```bash
-bash packageLinux.sh --format deb --build-dir ./build
-bash packageLinux.sh --format rpm --build-dir ./build
-bash packageLinux.sh --format arch --build-dir ./build
-```
-
-Debian packages discover linked-library dependencies using `dpkg-shlibdeps`,
-so library ABI/package-name differences are taken from the build computer.
-RPM packages use rpmbuild's automatic shared-library dependency detection.
-Arch packages declare their runtime dependencies in a generated `PKGBUILD` and
-are assembled with `makepkg` as a normal user. Native format tools must be
-installed first; for example, `sudo apt install dpkg-dev` or
-`sudo dnf install rpm-build`.
-
-Packages install:
-
-- `/usr/bin/lintunes`
-- `/usr/share/applications/lintunes.desktop`
-- `/usr/share/doc/lintunes/README.md` and `manual.md`
-
-After installation, start **LinTunes** from the application menu or run
-`lintunes` in a terminal. Upgrade by building a new package and installing it
-the same way. Uninstall using `sudo apt remove lintunes`,
-`sudo dnf remove lintunes`, `sudo zypper remove lintunes`, or
-`sudo pacman -R lintunes`. Your personal library database and music are not
-included in, or deleted by, the package.
-
-This creates a **local package**, not a public apt/RPM repository listing.
-Build separately for each distribution/release and CPU architecture; these
-packages do not bundle system libraries and are not universally portable.
-Some encoders/codecs require optional distribution repositories. Internet radio
-requires VLC plugins, and iPod formatting requires a running UDisks2/Polkit
-desktop session.
-
-If you previously installed manually to `/usr/local/bin`, that copy may take
-precedence over `/usr/bin/lintunes`. Check `command -v lintunes` and remove only
-your old manual installation if necessary; the package manager does not own it.
-
-### Archive fallback and direct CPack usage
-
-On other Linux distributions, or for manual installation:
-
-```bash
-bash packageLinux.sh --format tgz
-tar -xzf generated-artifacts/packages/lintunes-*.tar.gz
-```
-
-The archive contains a versioned directory with a `usr/` tree. It is **not**
-managed by apt/dnf/pacman and does not resolve dependencies. Prefer a native
-package when your distribution is supported.
-
-For direct CMake/CPack usage after building:
-
-```bash
-(cd build && cpack -G DEB)  # or RPM / TGZ; native tools are still required
-```
-
-## Running
-
-```bash
-./build/lintunes
-```
-
-Or after `make install`:
-```bash
-lintunes
-```
-
 ## Internet Radio
 
 1. Click **📻 Internet Radio** in the toolbar.
