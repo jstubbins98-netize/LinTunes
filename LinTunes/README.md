@@ -83,8 +83,14 @@ sudo pacman -S --needed \
 From this source directory, build and optionally install with:
 
 ```bash
+# clone the repo
+git clone https://github.com/jstubbins98-netize/LinTunes.git
+
+# build the program with Cmake
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel "$(nproc)"
+
+# run it
 ./build/lintunes
 
 # Optional: install system-wide
