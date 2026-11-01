@@ -143,7 +143,41 @@ build() {
     success "Build complete!  Binary: $BUILD_DIR/lintunes"
     echo
     echo -e "  Run:  ${BOLD}\"$BUILD_DIR/lintunes\"${RESET}"
-    echo -e "  Or:   ${BOLD}sudo cmake --install \"$BUILD_DIR\"${RESET}  (installs to /usr/local/bin)"
+}
+
+install_system_wide() {
+    local answer=""
+    echo
+    info "System-wide installation copies LinTunes to /usr/local/bin and installs its desktop launcher and documentation."
+    info "Administrator authorization may be required. Existing files from a previous manual installation may be replaced."
+
+    while true; do
+        printf 'Install LinTunes system-wide now? [y/N] '
+        if ! read -r answer; then
+            echo
+            info "No answer received; skipping system-wide installation."
+            return 0
+        fi
+        case "${answer,,}" in
+            y|yes) break ;;
+            n|no|"")
+                info "Skipping installation. You can run \"$BUILD_DIR/lintunes\" directly."
+                return 0
+                ;;
+            *) warn "Please enter yes or no." ;;
+        esac
+    done
+
+    if [ "$(id -u)" -eq 0 ]; then
+        cmake --install "$BUILD_DIR" --prefix /usr/local ||
+            die "System-wide installation failed. The compiled executable is still available in \"$BUILD_DIR\"."
+    else
+        command -v sudo >/dev/null 2>&1 ||
+            die "sudo is required for system-wide installation. The compiled executable is still available in \"$BUILD_DIR\"."
+        sudo cmake --install "$BUILD_DIR" --prefix /usr/local ||
+            die "System-wide installation failed or authorization was cancelled. The compiled executable is still available in \"$BUILD_DIR\"."
+    fi
+    success "LinTunes installed system-wide. Launch it from your application menu or run lintunes."
 }
 
 # ── Entry point ────────────────────────────────────────────────────────────────
@@ -175,3 +209,4 @@ else
 fi
 
 build
+install_system_wide
