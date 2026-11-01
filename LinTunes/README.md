@@ -22,7 +22,53 @@ A fully-featured iTunes equivalent for Linux written in C++17, using GTK3 for th
 
 MP3, M4A/AAC, FLAC, OGG Vorbis, WAV, AIFF, WMA, Opus, APE, ALAC
 
-## Dependencies
+## Install LinTunes via apt (Ubuntu)
+
+Install the published package from the LinTunes PPA without compiling locally.
+The published build supports **Ubuntu 26.04 LTS (Resolute), amd64
+(64-bit Intel/AMD)**.
+
+```bash
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:doctor-retro-g/lintunes
+sudo apt update
+sudo apt install lintunes
+```
+
+Open **LinTunes** from your application menu, or run:
+
+```bash
+lintunes
+```
+
+The PPA is community-maintained, not part of Ubuntu's official repositories.
+Add it only if you trust its maintainer. It is not intended for Debian; other
+Ubuntu releases and architectures require separate compatible builds.
+Check the [PPA page](https://launchpad.net/~doctor-retro-g/+archive/ubuntu/lintunes)
+for published packages and supported releases.
+
+### Updates
+
+With the PPA enabled, LinTunes updates are available through your normal
+system updates. To request an available LinTunes upgrade specifically:
+
+```bash
+sudo apt update
+sudo apt install --only-upgrade lintunes
+```
+
+### Removal
+
+```bash
+sudo apt remove lintunes
+sudo add-apt-repository --remove ppa:doctor-retro-g/lintunes
+sudo apt update
+```
+
+Removing the package leaves your personal music and library database intact.
+
+## Dependencies for building from source
 
 ### Ubuntu / Debian
 
@@ -80,15 +126,16 @@ sudo pacman -S --needed \
 
 ## Building
 
-From this source directory, build and optionally install with:
-
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel "$(nproc)"
-./build/lintunes
+git clone https://github.com/jstubbins98-netize/LinTunes.git
+cd LinTunes
+
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
 
 # Optional: install system-wide
-sudo cmake --install build
+sudo make install
 ```
 ## Internet Radio
 
@@ -225,7 +272,7 @@ Burning requires `wodim` (or `cdrecord`) to be installed.
 ## Project Structure
 
 ```
-LinTunes source/
+LinTunes/
 ├── CMakeLists.txt          — CMake build definition
 ├── README.md               — This file
 ├── resources/
@@ -244,4 +291,4 @@ LinTunes source/
 
 ## License
 
-GPL-3.0
+GPL-3.0 or later
