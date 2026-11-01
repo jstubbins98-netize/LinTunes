@@ -80,16 +80,15 @@ sudo pacman -S --needed \
 
 ## Building
 
-```bash
-git clone https://github.com/jstubbins98-netize/LinTunes.git
-cd LinTunes
+From this source directory, build and optionally install with:
 
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel "$(nproc)"
+./build/lintunes
 
 # Optional: install system-wide
-sudo make install
+sudo cmake --install build
 ```
 ## Internet Radio
 
@@ -226,7 +225,7 @@ Burning requires `wodim` (or `cdrecord`) to be installed.
 ## Project Structure
 
 ```
-LinTunes/
+LinTunes source/
 ├── CMakeLists.txt          — CMake build definition
 ├── README.md               — This file
 ├── resources/
@@ -245,4 +244,4 @@ LinTunes/
 
 ## License
 
-GPL-3.0 or later
+GPL-3.0
