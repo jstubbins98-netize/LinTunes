@@ -244,4 +244,4 @@ LinTunes source/
 
 ## License
 
-GPL-3.0 or later
+GPL-3.0
