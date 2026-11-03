@@ -6,6 +6,7 @@ A fully-featured iTunes equivalent for Linux written in C++17, using GTK3 for th
 
 - **Music library** — import audio files and folders, browse by artist/album/genre/playlist
 - **Audio playback** — full playback via GStreamer: play, pause, seek, shuffle, repeat
+- **Now-playing artwork** — album art beside the playback controls, loaded from embedded MP3, FLAC, M4A/MP4, Ogg Vorbis, or Opus pictures, with local cover/folder images as a fallback
 - **Internet radio** — stream HTTP/HTTPS radio stations through libVLC
 - **SQLite database** — persistent library at `~/.local/share/lintunes/library.db`
 - **iPod sync** — sync supported Windows/FAT-formatted disk-mode iPods through libgpod; HFS/HFS+ and unknown filesystems are blocked
@@ -83,14 +84,8 @@ sudo pacman -S --needed \
 From this source directory, build and optionally install with:
 
 ```bash
-# clone the repo
-git clone https://github.com/jstubbins98-netize/LinTunes.git
-
-# build the program with Cmake
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel "$(nproc)"
-
-# run it
 ./build/lintunes
 
 # Optional: install system-wide
