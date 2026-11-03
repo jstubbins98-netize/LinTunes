@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "AlbumArt.h"
 #include "iPodRestore.h"
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -214,6 +215,7 @@ void MainWindow::showInternetRadio() {
 
     if (response == GTK_RESPONSE_REJECT) {
         radio_.stop();
+        AlbumArt::display(GTK_IMAGE(album_art_), "");
         gtk_label_set_text(GTK_LABEL(lbl_track_), "No track playing");
         setStatus("Internet radio stopped");
         return;
@@ -230,6 +232,7 @@ void MainWindow::showInternetRadio() {
     }
 
     player_.stop();
+    AlbumArt::display(GTK_IMAGE(album_art_), "");
     if (!radio_.play(url)) {
         GtkWidget* error = gtk_message_dialog_new(
             GTK_WINDOW(window_), GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR,
@@ -349,6 +352,12 @@ void MainWindow::buildToolbar() {
     gtk_widget_set_margin_end(toolbar_box, 8);
     gtk_widget_set_margin_top(toolbar_box, 4);
     gtk_widget_set_margin_bottom(toolbar_box, 4);
+
+    // Fixed-size now-playing artwork remains visible beside the controls.
+    album_art_ = gtk_image_new();
+    gtk_widget_set_size_request(album_art_, 80, 80);
+    gtk_box_pack_start(GTK_BOX(toolbar_box), album_art_, FALSE, FALSE, 4);
+    AlbumArt::display(GTK_IMAGE(album_art_), "");
 
     // Playback buttons
     btn_prev_       = gtk_button_new_with_label("⏮");
@@ -584,6 +593,7 @@ void MainWindow::refreshSourceSidebar() {
 }
 
 void MainWindow::updateNowPlaying(const Track& t) {
+    AlbumArt::display(GTK_IMAGE(album_art_), t.file_path);
     std::string label = t.title + "  –  " + t.artist;
     if (!t.album.empty()) label += "  [" + t.album + "]";
     gtk_label_set_text(GTK_LABEL(lbl_track_), label.c_str());

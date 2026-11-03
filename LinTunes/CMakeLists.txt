@@ -53,6 +53,7 @@ set(SOURCES
     src/iPodRestore.cpp
     src/CDManager.cpp
     src/MainWindow.cpp
+    src/AlbumArt.cpp
 )
 
 set(HEADERS
@@ -66,6 +67,7 @@ set(HEADERS
     src/iPodRestore.h
     src/CDManager.h
     src/MainWindow.h
+    src/AlbumArt.h
 )
 
 # ── Executable ────────────────────────────────────────────────────────────────

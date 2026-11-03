@@ -45,6 +45,7 @@ private:
     GtkWidget* seek_scale_     = nullptr;
     GtkWidget* lbl_time_       = nullptr;
     GtkWidget* lbl_track_      = nullptr;
+    GtkWidget* album_art_      = nullptr;
 
     // --- Source sidebar ---
     GtkWidget* source_tree_    = nullptr;
