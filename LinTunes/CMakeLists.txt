@@ -50,6 +50,7 @@ set(SOURCES
     src/RadioPlayer.cpp
     src/iPodSync.cpp
     src/iPodVolume.cpp
+    src/iPodFirmware.cpp
     src/iPodRestore.cpp
     src/CDManager.cpp
     src/MainWindow.cpp
@@ -64,6 +65,7 @@ set(HEADERS
     src/RadioPlayer.h
     src/iPodSync.h
     src/iPodVolume.h
+    src/iPodFirmware.h
     src/iPodRestore.h
     src/CDManager.h
     src/MainWindow.h
@@ -133,9 +135,11 @@ install(TARGETS lintunes RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES resources/lintunes.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
 )
-install(FILES README.md manual.md
+install(FILES README.md manual.md PUBLISHING.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/lintunes)
 install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/lintunes)
+
+include(cmake/Packaging.cmake)
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 message(STATUS "Build type  : ${CMAKE_BUILD_TYPE}")

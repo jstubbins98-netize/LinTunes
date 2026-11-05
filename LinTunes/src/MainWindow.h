@@ -108,7 +108,7 @@ private:
     void showAbout();
     void showPreferences();
     void connectIPod();
-    void formatIPod(const std::string& mount = "");
+    void formatIPod(const std::string& mount = "", bool restoreFirmware = false);
     void syncToIPod();
     void restoreIPod();
     void resetIPodDatabase();

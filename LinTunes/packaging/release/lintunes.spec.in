@@ -1,0 +1,52 @@
+Name:           lintunes
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        Music library manager with iPod synchronization
+License:        GPL-3.0-or-later
+URL:            @HOMEPAGE@
+Source0:        @SOURCE_URL@
+
+BuildRequires:  gcc-c++
+BuildRequires:  cmake
+BuildRequires:  make
+BuildRequires:  pkgconfig(gtk+-3.0)
+BuildRequires:  pkgconfig(gstreamer-1.0)
+BuildRequires:  pkgconfig(gstreamer-audio-1.0)
+BuildRequires:  pkgconfig(taglib)
+BuildRequires:  pkgconfig(sqlite3)
+BuildRequires:  pkgconfig(libgpod-1.0)
+BuildRequires:  pkgconfig(libcdio)
+BuildRequires:  pkgconfig(libcdio_paranoia)
+BuildRequires:  pkgconfig(libcddb)
+BuildRequires:  pkgconfig(libvlc)
+Requires:       gstreamer1-plugins-base
+Requires:       gstreamer1-plugins-good
+Requires:       vlc
+Requires:       udisks2
+Requires:       dosfstools
+
+%description
+GTK3 music manager with GStreamer playback, libVLC internet radio,
+CD ripping and burning, playlists, and Windows/FAT iPod synchronization.
+
+%prep
+%autosetup
+
+%build
+%cmake
+%cmake_build
+
+%install
+%cmake_install
+# RPM's license macro installs this in the distribution's license directory.
+rm -rf %{buildroot}%{_datadir}/licenses/lintunes
+
+%files
+%license LICENSE
+%{_bindir}/lintunes
+%{_datadir}/applications/lintunes.desktop
+%{_datadir}/doc/lintunes/
+
+%changelog
+* @RPM_DATE@ @MAINTAINER@ - @VERSION@-1
+- Package LinTunes source release.

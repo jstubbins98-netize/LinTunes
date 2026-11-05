@@ -69,9 +69,9 @@ std::vector<std::string> iPodRestore::commandArguments(
     const iPodRestoreTarget& target) {
     if (kind == iPodRestoreKind::TouchIPSW)
         return {"idevicerestore", "-u", target.identifier, "-e", firmware_path};
-    // Stock ipodpatcher auto-selects a disk and provides no supported way to
-    // bind the write to LinTunes' selected iPod. Never construct a command
-    // that could silently target another attached device.
+    // Disk-mode restoration belongs to iPodVolume/iPodFirmware, which captures
+    // a verified whole-disk by-id identity, a sealed image, and partition bounds.
+    // A touch UDID alone is never enough authority for a disk-mode write.
     return {};
 }
 
@@ -131,8 +131,8 @@ bool iPodRestore::targetStillMatches(iPodRestoreKind kind,
         }
         return true;
     }
-    error = "Disk-mode firmware restore is disabled because ipodpatcher cannot "
-            "bind its destructive write to the iPod selected in LinTunes.";
+    error = "Use the verified disk-mode firmware/FAT32 workflow. "
+            "This restore API only authorizes iPod touch UDID restores.";
     return false;
 }
 

@@ -30,12 +30,54 @@ LinTunes is a full-featured music manager for Linux, designed to work and feel l
 
 ## 1. Installation
 
+### Install a locally built package (recommended)
+
+After building on the target Linux computer, run:
+
+```bash
+cd LinTunes
+bash packageLinux.sh
+```
+
+This packages the existing build and prints an installation command. Output is
+written to `generated-artifacts/packages/`; nothing is installed automatically.
+
+| System | Package | Install |
+|--------|---------|---------|
+| Debian / Ubuntu / Mint | `.deb` | `sudo apt install ./generated-artifacts/packages/lintunes_*.deb` |
+| Fedora / RHEL | `.rpm` | `sudo dnf install ./generated-artifacts/packages/lintunes-*.rpm` |
+| openSUSE | `.rpm` | `sudo zypper install ./generated-artifacts/packages/lintunes-*.rpm` |
+| Arch / Manjaro | `.pkg.tar.*` | `sudo pacman -U ./generated-artifacts/packages/lintunes-*.pkg.tar.*` |
+
+Use an exact filename if the directory contains multiple builds. Debian
+packaging requires `dpkg-dev`; RPM packaging requires `rpm-build`; Arch
+packaging requires `base-devel` and must not run as root. CMake/CPack are also
+required. The helper reports missing tools without installing them.
+
+`bash buildPod.sh --package` builds and packages in one step. To skip dependency
+installation, use `bash buildPod.sh --skip-deps --package`. You may explicitly
+select a format with `--package=deb`, `--package=rpm`, `--package=arch`, or
+`--package=tgz`.
+
+The installed executable is `/usr/bin/lintunes`; the desktop launcher appears
+in the application menu. Documentation is in `/usr/share/doc/lintunes`. Your
+personal library and music remain in your user directories. Upgrade by
+installing a newly built package. Uninstall with your package manager's normal
+remove command for `lintunes`; this leaves personal music and library data
+untouched.
+
+Build on the destination distribution/release and architecture, not on another
+Linux system with incompatible shared libraries. Creating a local `.deb` does
+not publish the application in the public apt repositories. Use
+`bash packageLinux.sh --format tgz` only for manual archive installation;
+archives are not package-manager installations.
+
 ### Option A — Automated build script
 
 The easiest way to install LinTunes is with the included build script. It detects your Linux distribution, installs all required packages, and compiles the program in one step.
 
 ```bash
-cd "LinTunes source"
+cd LinTunes
 chmod +x buildPod.sh
 ./buildPod.sh
 ```
@@ -86,9 +128,10 @@ sudo pacman -S --needed \
 
 **2. Compile**
 ```bash
-cd "LinTunes source"
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel "$(nproc)"
+cd LinTunes
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
 ```
 
 **3. Run**
@@ -98,7 +141,7 @@ cmake --build build --parallel "$(nproc)"
 
 **4. Optional system-wide install**
 ```bash
-sudo cmake --install build
+sudo make install
 # then launch from anywhere:
 lintunes
 ```
@@ -401,24 +444,29 @@ database. Back up anything important before continuing.
    the music/data partition and cannot be undone. Cancel is selected by default
    and leaves the device unchanged. Choosing FAT32 opens the verification and
    confirmation steps; no formatting starts immediately.
-3. Select the intended device and review the model, serial, mount, partition,
-   and size. Type `FORMAT IPOD` exactly.
-4. Approve desktop administrator authorization if requested. Wait for formatting,
+3. Select the intended device, then choose **Format FAT32 Only** or **Restore
+   Firmware + FAT32**. Firmware mode asks for a trusted full model-tagged `.ipod`
+   image and validates it before any erasure.
+4. Review the model, serial, mount, partition, size, and optional firmware
+   fingerprint. Type `FORMAT IPOD` exactly.
+5. Approve desktop administrator authorization if requested. Wait for optional
+   firmware flashing/readback and formatting,
    remounting, device-metadata restoration, database initialization and
    verification, and filesystem flushing to finish.
-5. A successful format reconnects the empty Windows/FAT32 iPod for syncing.
+6. A successful format reconnects the empty Windows/FAT32 iPod for syncing.
 
 Only verified USB disk-mode iPods with **MBR partition 1 for firmware and
 partition 2 for music** are supported by this formatter. Hardware serial,
 filesystem UUID, partition boundaries, and model metadata are bound to the
 selected device and checked again immediately before formatting. The partition
-table and firmware partition are preserved.
+table is preserved. Format-only mode preserves firmware; firmware mode replaces
+the existing OS image using ipodpatcher before FAT32 creation.
 
 **Apple partition maps (APM), GPT, unidentified devices, and other layouts are
 refused without erasing.** A Mac-formatted iPod often has APM: reformatting its
 data partition alone would not create a Windows-compatible iPod. Use a
 model-aware Windows iTunes restore for that conversion. LinTunes deliberately
-does not rewrite partition tables or firmware.
+does not rewrite partition tables.
 
 An error after the formatting step (for example remount or initialization
 failure) does not restore old data. The error dialog warns when data may
@@ -454,16 +502,32 @@ or is for another model.
 
 ### Classic, nano, mini, and shuffle firmware restore
 
-Disk-mode firmware flashing is intentionally disabled. Stock `ipodpatcher`
-auto-selects a detected disk and does not provide a supported interface that
-binds the destructive write to the iPod selected in LinTunes. LinTunes refuses
-to launch it rather than risk writing to another attached device.
+Choose the disk-mode family under **Device → Restore iPod from Firmware…**.
+Select the mounted iPod and supply a local **full firmware dump in ipodpatcher's
+model-tagged `.ipod` format**, exported with its `--read-firmware` option for
+the exact generation. This is not an Apple IPSW archive, headerless binary,
+encrypted nano image, or a Rockbox bootloader/installer. Renaming a file does
+not convert it. Model/checksum validation does not authenticate the publisher:
+only supply firmware from a trusted source.
 
-Selecting the disk-mode family therefore shows an explanation and stops before
-asking for a firmware file or changing the device. Use **Erase and Reset Music
-Database** when the goal is to clear a safely identified, mounted disk-mode
-iPod. A full firmware-partition restore must be performed outside LinTunes with
-a procedure that explicitly identifies the intended physical device.
+The image mappings cover older 1st–5th-generation iPods (including photo/color
+and video), mini 1/2, and nano 1, but the device must also pass the USB/MBR
+checks above. Modern classic 6/7, shuffle, later nano, touch, Apple partition
+maps, GPT, and missing/damaged firmware directories are not supported here.
+Replacement images larger than the existing verified OS image are refused.
+
+Install `ipodpatcher` and `pkexec` separately in root-owned, non-group/world-
+writable locations. LinTunes never runs itself as root. It snapshots and seals
+the chosen file in memory and shows its model tag/SHA-256 before typed erase
+confirmation. It revalidates the selected hardware and unmounted partitions,
+uses an explicit whole-disk `/dev/disk/by-id` identity for every ipodpatcher
+command, reads the old firmware, flashes the chosen image, then verifies exact
+readback before requesting FAT32 formatting. Failure stops the process;
+firmware may already have changed if writing had begun. After FAT32 creation,
+libgpod recreates and verifies the music database; libgpod does not flash firmware.
+
+Use **Format FAT32 Only** to preserve existing firmware, or **Erase and Reset
+Music Database** to clear music without firmware flashing or repartitioning.
 
 ### Erase and reset the music database
 
@@ -494,10 +558,11 @@ remounted as another disk, or swapped after confirmation, the reset is cancelled
   refuses to continue when zero or multiple identifiable devices are present.
 - LinTunes records the selected iPod touch UDID before confirmation and checks
   for the same UDID again immediately before launching `idevicerestore`.
-- Disk-mode firmware flashing is disabled; LinTunes never lets
-  `ipodpatcher` auto-select a disk.
+- Disk-mode firmware writes use a verified whole-disk by-id identity; LinTunes
+  never lets `ipodpatcher` auto-select a disk.
 - If LinTunes reports that a restore tool is missing, install
-  `idevicerestore` and the `idevice_id` utility, then restart LinTunes.
+  `idevicerestore` and the `idevice_id` utility for touch, or trusted system-wide
+  `ipodpatcher` and `pkexec` for supported disk-mode restoration.
 - If permission is denied, configure your distribution's USB/device access
   rules for the restore tool. Do not run the entire LinTunes application as root.
 - Firmware restore output is shown in the completion error dialog when a tool

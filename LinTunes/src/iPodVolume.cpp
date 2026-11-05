@@ -152,6 +152,7 @@ bool iPodVolume::inspect(const std::string& mount, std::string& error) {
     Itdb_Device* dev = itdb_device_new();
     itdb_device_set_mountpoint(dev, mount.c_str());
     const Itdb_IpodInfo* info = itdb_device_get_ipod_info(dev);
+    if (info) generation_ = info->ipod_generation;
     if (info && info->model_number &&
         info->ipod_generation != ITDB_IPOD_GENERATION_UNKNOWN &&
         info->ipod_model != ITDB_IPOD_MODEL_INVALID &&
@@ -260,8 +261,135 @@ std::string iPodVolume::description() const {
         "\nSize: " + std::to_string(size_ / (1024 * 1024)) + " MiB";
 }
 
+std::string iPodVolume::firmwareDescription() const {
+    return firmware_ ? firmware_->description() : "";
+}
+
+bool iPodVolume::prepareFirmware(const std::string& filename, std::string& error) {
+    firmware_.reset();
+    diskAlias_.clear();
+    firmwareBlock_.clear();
+    firmwareSize_ = firmwareOffset_ = 0;
+    if (!validate(true, error)) return false;
+    auto image = iPodFirmware::load(filename, generation_, error);
+    if (!image || !iPodFirmware::toolsAvailable(error)) return false;
+    auto disk = properties(table_, "org.freedesktop.UDisks2.Block", error);
+    if (!disk || text(disk.get(), "Drive") != drive_) {
+        error = "Cannot identify the iPod's whole-disk block device."; return false;
+    }
+    diskNumber_ = number(disk.get(), "DeviceNumber");
+    Variant aliases(g_variant_lookup_value(disk.get(), "Symlinks", G_VARIANT_TYPE("aay")), g_variant_unref);
+    if (aliases) {
+        for (gsize i = 0; i < g_variant_n_children(aliases.get()); ++i) {
+            Variant value(g_variant_get_child_value(aliases.get(), i), g_variant_unref);
+            const char* alias = g_variant_get_bytestring(value.get());
+            if (alias && fs::path(alias).parent_path() == "/dev/disk/by-id" &&
+                std::string(alias).find("-part") == std::string::npos) {
+                diskAlias_ = alias;
+                break;
+            }
+        }
+    }
+    if (!validateFirmwareTarget(error)) return false;
+    auto objects = call(root, "org.freedesktop.DBus.ObjectManager", "GetManagedObjects", nullptr, error);
+    if (!objects) return false;
+    Variant entries(g_variant_get_child_value(objects.get(), 0), g_variant_unref);
+    GVariantIter iter;
+    g_variant_iter_init(&iter, entries.get());
+    const gchar* path;
+    GVariant* interfaces;
+    while (g_variant_iter_next(&iter, "{&o@a{sa{sv}}}", &path, &interfaces)) {
+        Variant owner(interfaces, g_variant_unref);
+        Variant part(g_variant_lookup_value(interfaces,
+            "org.freedesktop.UDisks2.Partition", G_VARIANT_TYPE_VARDICT), g_variant_unref);
+        guint32 index = 0;
+        if (part) g_variant_lookup(part.get(), "Number", "u", &index);
+        if (part && index == 1 && text(part.get(), "Table") == table_) {
+            firmwareSize_ = number(part.get(), "Size");
+            firmwareOffset_ = number(part.get(), "Offset");
+            firmwareBlock_ = path;
+        }
+    }
+    if (!firmwareSize_) { error = "Cannot verify firmware partition capacity."; return false; }
+    if (!validateFirmwareTarget(error)) return false;
+    firmware_ = std::move(image);
+    return true;
+}
+
+bool iPodVolume::validateFirmwareTarget(std::string& error) const {
+    auto disk = properties(table_, "org.freedesktop.UDisks2.Block", error);
+    auto drive = properties(drive_, "org.freedesktop.UDisks2.Drive", error);
+    struct stat st {}, link {};
+    bool advertised = false;
+    Variant aliases(disk ? g_variant_lookup_value(disk.get(), "Symlinks",
+        G_VARIANT_TYPE("aay")) : nullptr, g_variant_unref);
+    if (aliases)
+        for (gsize i = 0; i < g_variant_n_children(aliases.get()); ++i) {
+            Variant alias(g_variant_get_child_value(aliases.get(), i), g_variant_unref);
+            if (diskAlias_ == g_variant_get_bytestring(alias.get())) advertised = true;
+        }
+    if (!disk || !drive || diskAlias_.empty() || !advertised ||
+        text(disk.get(), "Drive") != drive_ || text(drive.get(), "Serial") != serial_ ||
+        number(disk.get(), "DeviceNumber") != diskNumber_ || diskNumber_ == device_ ||
+        fs::path(diskAlias_).parent_path() != "/dev/disk/by-id" ||
+        lstat(diskAlias_.c_str(), &link) != 0 || !S_ISLNK(link.st_mode) || link.st_uid != 0 ||
+        stat(diskAlias_.c_str(), &st) != 0 || !S_ISBLK(st.st_mode) ||
+        static_cast<unsigned long long>(st.st_rdev) != diskNumber_) {
+        error = "The selected iPod has no unchanged, root-owned whole-disk /dev/disk/by-id identity. "
+                "Firmware restore cancelled; no device will be auto-selected.";
+        return false;
+    }
+    if (firmwareSize_) {
+        auto part = properties(firmwareBlock_, "org.freedesktop.UDisks2.Partition", error);
+        guint32 index = 0;
+        if (part) g_variant_lookup(part.get(), "Number", "u", &index);
+        if (!part || index != 1 || text(part.get(), "Table") != table_ ||
+            number(part.get(), "Size") != firmwareSize_ ||
+            number(part.get(), "Offset") != firmwareOffset_) {
+            error = "The firmware partition changed after device verification.";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool iPodVolume::unmounted(std::string& error) const {
+    if (!validate(false, error)) return false;
+    auto filesystem = properties(block_, "org.freedesktop.UDisks2.Filesystem", error);
+    Variant dataMounts(filesystem ? g_variant_lookup_value(filesystem.get(),
+        "MountPoints", G_VARIANT_TYPE("aay")) : nullptr, g_variant_unref);
+    if (!dataMounts || g_variant_n_children(dataMounts.get()) != 0) {
+        error = "The iPod data partition is mounted or its mount state is unknown.";
+        return false;
+    }
+    auto objects = call(root, "org.freedesktop.DBus.ObjectManager", "GetManagedObjects", nullptr, error);
+    if (!objects) return false;
+    Variant entries(g_variant_get_child_value(objects.get(), 0), g_variant_unref);
+    GVariantIter iter;
+    g_variant_iter_init(&iter, entries.get());
+    const gchar* path;
+    GVariant* interfaces;
+    while (g_variant_iter_next(&iter, "{&o@a{sa{sv}}}", &path, &interfaces)) {
+        Variant owner(interfaces, g_variant_unref);
+        Variant part(g_variant_lookup_value(interfaces,
+            "org.freedesktop.UDisks2.Partition", G_VARIANT_TYPE_VARDICT), g_variant_unref);
+        if (!part || text(part.get(), "Table") != table_) continue;
+        Variant filesystem(g_variant_lookup_value(interfaces,
+            "org.freedesktop.UDisks2.Filesystem", G_VARIANT_TYPE_VARDICT), g_variant_unref);
+        if (!filesystem) continue;
+        Variant mounts(g_variant_lookup_value(filesystem.get(), "MountPoints",
+            G_VARIANT_TYPE("aay")), g_variant_unref);
+        if (!mounts || g_variant_n_children(mounts.get()) != 0) {
+            error = "An iPod partition is mounted; firmware restore was cancelled.";
+            return false;
+        }
+    }
+    return validateFirmwareTarget(error);
+}
+
 bool iPodVolume::format(std::string& newMount, std::string& error) const {
     if (!validate(true, error)) return false;
+    if (firmware_ && !validateFirmwareTarget(error)) return false;
     if (!call(block_, "org.freedesktop.UDisks2.Filesystem", "Unmount",
               g_variant_new("(@a{sv})", options()), error)) return false;
     if (!validate(false, error)) return false;
@@ -273,6 +401,13 @@ bool iPodVolume::format(std::string& newMount, std::string& error) const {
     if (!mounts || g_variant_n_children(mounts.get()) != 0) {
         error = "The iPod was remounted or its mount state is unknown. Formatting cancelled.";
         return false;
+    }
+    if (firmware_) {
+        if (!unmounted(error) ||
+            !firmware_->flash(diskAlias_, firmwareSize_,
+                [this](std::string& failure) { return unmounted(failure); }, error))
+            return false;
+        if (!unmounted(error)) return false;
     }
     GVariantBuilder b;
     g_variant_builder_init(&b, G_VARIANT_TYPE_VARDICT);

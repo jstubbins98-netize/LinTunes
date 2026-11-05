@@ -896,7 +896,7 @@ void MainWindow::connectIPod() {
     setStatus(buf);
 }
 
-void MainWindow::formatIPod(const std::string& requestedMount) {
+void MainWindow::formatIPod(const std::string& requestedMount, bool restoreFirmware) {
     if (ipod_busy_) { setStatus("Wait for the current iPod operation to finish."); return; }
     std::string mount = requestedMount;
     if (mount.empty()) {
@@ -931,16 +931,72 @@ void MainWindow::formatIPod(const std::string& requestedMount) {
         gtk_widget_destroy(dialog);
         return;
     }
-    GtkWidget* confirm = gtk_dialog_new_with_buttons("Erase iPod and Format as FAT32",
+    if (!restoreFirmware) {
+        GtkWidget* mode = gtk_message_dialog_new(GTK_WINDOW(window_), GTK_DIALOG_MODAL,
+            GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
+            "Restore firmware before formatting this iPod as FAT32?");
+        gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(mode), "%s",
+            "Restore Firmware + FAT32 asks for a compatible, model-tagged .ipod firmware file "
+            "and uses ipodpatcher to flash and verify it before erasing the music partition.\n\n"
+            "Format FAT32 Only keeps the current firmware. Both erase user data and require "
+            "a separate typed confirmation. Unsupported firmware models are refused.");
+        gtk_dialog_add_buttons(GTK_DIALOG(mode), "_Cancel", GTK_RESPONSE_CANCEL,
+            "Format FAT32 _Only", GTK_RESPONSE_NO,
+            "_Restore Firmware + FAT32", GTK_RESPONSE_YES, nullptr);
+        gtk_dialog_set_default_response(GTK_DIALOG(mode), GTK_RESPONSE_CANCEL);
+        const int choice = gtk_dialog_run(GTK_DIALOG(mode));
+        gtk_widget_destroy(mode);
+        if (choice != GTK_RESPONSE_NO && choice != GTK_RESPONSE_YES) {
+            setStatus("FAT32 formatting cancelled. The iPod was left unchanged.");
+            return;
+        }
+        restoreFirmware = choice == GTK_RESPONSE_YES;
+    }
+    if (restoreFirmware) {
+        GtkWidget* chooser = gtk_file_chooser_dialog_new(
+            "Select Full iPod Firmware Image (.ipod)", GTK_WINDOW(window_),
+            GTK_FILE_CHOOSER_ACTION_OPEN, "_Cancel", GTK_RESPONSE_CANCEL,
+            "_Validate Firmware", GTK_RESPONSE_ACCEPT, nullptr);
+        GtkFileFilter* filter = gtk_file_filter_new();
+        gtk_file_filter_set_name(filter, "Model-tagged ipodpatcher firmware (*.ipod)");
+        gtk_file_filter_add_pattern(filter, "*.ipod");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(chooser), filter);
+        gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(chooser), TRUE);
+        std::string filename;
+        if (gtk_dialog_run(GTK_DIALOG(chooser)) == GTK_RESPONSE_ACCEPT) {
+            gchar* selected = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(chooser));
+            if (selected) { filename = selected; g_free(selected); }
+        }
+        gtk_widget_destroy(chooser);
+        if (filename.empty()) {
+            setStatus("Firmware restore cancelled. The iPod was left unchanged."); return;
+        }
+        if (!target.prepareFirmware(filename, error)) {
+            GtkWidget* dialog = gtk_message_dialog_new(GTK_WINDOW(window_), GTK_DIALOG_MODAL,
+                GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "Firmware restore refused:\n%s", error.c_str());
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+            return;
+        }
+    }
+    GtkWidget* confirm = gtk_dialog_new_with_buttons(
+        restoreFirmware ? "Flash Firmware, Erase iPod and Format as FAT32" : "Erase iPod and Format as FAT32",
         GTK_WINDOW(window_), GTK_DIALOG_MODAL,
         "_Cancel", GTK_RESPONSE_CANCEL,
-        "_Erase All Data and Format", GTK_RESPONSE_OK, nullptr);
+        restoreFirmware ? "_Flash Firmware and Erase All Data" : "_Erase All Data and Format",
+        GTK_RESPONSE_OK, nullptr);
     gtk_dialog_set_default_response(GTK_DIALOG(confirm), GTK_RESPONSE_CANCEL);
     const std::string prompt = target.description() +
         "\n\nWARNING: Formatting as FAT32 will permanently erase ALL USER DATA on "
         "the iPod's music/data partition, including music, playlists and other files. "
         "This cannot be undone. Back up your data first.\n"
-        "The existing MBR and firmware partition will be preserved.\n"
+        + (restoreFirmware
+            ? "The selected firmware will be flashed with ipodpatcher and read back for verification "
+              "before the data partition is erased. The MBR will be preserved. Wrong or interrupted "
+              "firmware can make the iPod unusable. Model/checksum checks do not prove Apple authenticity; "
+              "use only a trusted full firmware dump, never a Rockbox bootloader or installer.\n\n" +
+              target.firmwareDescription() + "\n"
+            : "The existing MBR and firmware partition will be preserved.\n") +
         "Linux may request administrator authorization through Polkit.\n\n"
         "Type FORMAT IPOD to continue:";
     GtkWidget* content = gtk_dialog_get_content_area(GTK_DIALOG(confirm));
@@ -960,14 +1016,16 @@ void MainWindow::formatIPod(const std::string& requestedMount) {
 
     ipod_busy_ = true;
     ipod_.disconnect();
-    setStatus("Formatting iPod as FAT32 — do not unplug it…");
-    std::thread([this, target]() {
+    setStatus(restoreFirmware ? "Restoring firmware, then formatting FAT32 — do not unplug it…"
+                             : "Formatting iPod as FAT32 — do not unplug it…");
+    std::thread([this, target, restoreFirmware]() {
         struct FormatResult {
             MainWindow* self;
             bool ok;
+            bool firmware;
             std::string mount, error;
         };
-        auto* result = new FormatResult{this, false, {}, {}};
+        auto* result = new FormatResult{this, false, restoreFirmware, {}, {}};
         result->ok = target.format(result->mount, result->error);
         gdk_threads_add_idle([](gpointer data) -> gboolean {
             auto* result = static_cast<FormatResult*>(data);
@@ -978,9 +1036,12 @@ void MainWindow::formatIPod(const std::string& requestedMount) {
                     result->self->ipod_.lastError();
             }
             const std::string message = result->ok
-                ? "iPod formatted as Windows FAT32 and connected. You can now sync music."
+                ? (result->firmware
+                    ? "Firmware restored and verified; iPod formatted as FAT32 and initialized with libgpod. You can now sync music."
+                    : "iPod formatted as Windows FAT32 and connected. You can now sync music.")
                 : "iPod formatting did not complete successfully:\n" + result->error +
-                  "\n\nIf the volume was already formatted, its old data has been erased.";
+                  "\n\nIf firmware writing had started, firmware may have changed. "
+                  "If formatting had started, old data may have been erased. Do not unplug during an active write.";
             result->self->setStatus(message);
             GtkWidget* dialog = gtk_message_dialog_new(GTK_WINDOW(result->self->window_),
                 GTK_DIALOG_MODAL, result->ok ? GTK_MESSAGE_INFO : GTK_MESSAGE_ERROR,
@@ -1140,12 +1201,7 @@ void MainWindow::restoreIPod() {
         }
         target.identifier = ids.front();
     } else {
-        GtkWidget* err = gtk_message_dialog_new(GTK_WINDOW(window_), GTK_DIALOG_MODAL,
-            GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s",
-            "Disk-mode firmware restore is disabled because ipodpatcher cannot "
-            "guarantee that it will write to the iPod selected in LinTunes.");
-        gtk_dialog_run(GTK_DIALOG(err));
-        gtk_widget_destroy(err);
+        formatIPod("", true);
         return;
     }
 
