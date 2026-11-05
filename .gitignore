@@ -1,5 +1,5 @@
 # Keep only Linux source-release inputs at the top level.
-# Generated upload files are still available on disk for dput/GitHub uploads.
+# Generated release files remain on disk but are not committed.
 # This does not affect files already tracked by Git.
 /*
 !/.gitignore
@@ -16,8 +16,6 @@
 !/cmake/
 !/packaging/
 !/tests/
-# Preserve actual Debian source metadata if packaging is assembled here.
-!/debian/
 
 # Build products, including accidental in-source CMake builds.
 CMakeFiles/
@@ -59,17 +57,6 @@ __pycache__/
 *.buildinfo
 *.upload
 
-# Debhelper staging state; keep debian/rules, control, changelog, etc.
-/debian/.debhelper/
-/debian/lintunes/
-/debian/lintunes-dbgsym/
-/debian/tmp/
-/debian/files
-/debian/debhelper-build-stamp
-/debian/*.substvars
-/debian/*.debhelper
-/debian/*.debhelper.log
-/debian/*.debhelper.*
 
 # Local configuration, credentials, editor state, and backups.
 .env
