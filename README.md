@@ -10,7 +10,7 @@ A fully-featured iTunes equivalent for Linux written in C++17, using GTK3 for th
 - **Internet radio** — stream HTTP/HTTPS radio stations through libVLC
 - **SQLite database** — persistent library at `~/.local/share/lintunes/library.db`
 - **iPod sync** — sync supported Windows/FAT-formatted disk-mode iPods through libgpod; HFS/HFS+ and unknown filesystems are blocked
-- **Windows iPod formatting** — create FAT32 on a verified iPod data partition while preserving its existing MBR and firmware partition
+- **Windows iPod formatting** — create FAT32 on a verified iPod data partition; optionally restore a compatible local firmware image with device-bound ipodpatcher and initialize the music database with libgpod
 - **Guarded iPod restore** — restore iPod touch from IPSW, or erase and recreate a Windows-formatted disk-mode iPod's music database
 - **CD ripping** — paranoia-mode ripping to FLAC, MP3, OGG, AAC, or WAV with CDDB metadata
 - **CD burning** — burn selected library tracks to a blank audio CD
@@ -23,7 +23,7 @@ A fully-featured iTunes equivalent for Linux written in C++17, using GTK3 for th
 
 MP3, M4A/AAC, FLAC, OGG Vorbis, WAV, AIFF, WMA, Opus, APE, ALAC
 
-## Dependencies
+## Dependencies for building from source
 
 ### Ubuntu / Debian
 
@@ -81,15 +81,16 @@ sudo pacman -S --needed \
 
 ## Building
 
-From this source directory, build and optionally install with:
-
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel "$(nproc)"
-./build/lintunes
+git clone https://github.com/jstubbins98-netize/LinTunes.git
+cd LinTunes
+
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
 
 # Optional: install system-wide
-sudo cmake --install build
+sudo make install
 ```
 ## Internet Radio
 
@@ -130,9 +131,13 @@ Back up music, playlists, and other files first.
 1. Mount the iPod, then choose **Device → Format iPod for Windows…**.
 2. Select the device. LinTunes checks its USB hardware serial, libgpod model,
    filesystem UUID, and partition layout.
-3. Review the displayed device details and type `FORMAT IPOD`.
-4. Authorize the operation in your desktop's Polkit dialog if requested.
-5. Wait while LinTunes unmounts the partition, formats it as FAT32, remounts it,
+3. Choose **Format FAT32 Only** to preserve firmware, or **Restore Firmware +
+   FAT32** to select a local, full, model-tagged `.ipod` firmware image.
+4. Review the device details and, if restoring firmware, its model tag and
+   SHA-256 fingerprint. Type `FORMAT IPOD`; Cancel remains the default.
+5. Authorize the operation in your desktop's Polkit dialog if requested.
+6. Wait while LinTunes unmounts the partition, optionally flashes and reads back
+   firmware, formats the data partition as FAT32, remounts it,
    restores device information, initializes and verifies the database, and
    flushes pending writes. Do not unplug it during this operation.
 
@@ -142,8 +147,43 @@ Device identity and model information are rechecked after confirmation.
 
 **Supported formatting layout:** a known USB disk-mode iPod with an existing
 DOS/MBR table, a separate firmware partition 1, and music partition 2. Only the
-music partition is formatted; the partition table and firmware contents are not
-rewritten.
+music partition is formatted; the partition table is never rewritten. Firmware
+contents are preserved in format-only mode and deliberately replaced in
+firmware-restore mode.
+
+#### Local firmware requirements and limitations
+
+Firmware mode also requires **ipodpatcher** and **pkexec**, installed system-wide
+in root-owned, non-group/world-writable locations. Build/install ipodpatcher
+from the trusted [Rockbox source](https://github.com/Rockbox/rockbox/tree/master/utils/ipodpatcher)
+if your distribution does not supply it. LinTunes does not download or install
+these tools or firmware automatically.
+
+Use a **full OS firmware image exported by `ipodpatcher --read-firmware` for
+the exact generation**, including its eight-byte model/checksum header. Apple
+`.ipsw` archives, headerless `.bin` files, and encrypted `.ipodx` files are not
+accepted by this workflow. Do not rename a downloaded IPSW or use a Rockbox
+bootloader/installer in place of full firmware. The model tag and additive
+checksum verify compatibility and corruption, **not Apple authenticity**; only
+use a trusted image whose provenance you know.
+
+The supported image mappings are older iPods (1st–5th generation, including
+photo/color and video), mini 1/2, and nano 1, subject to the verified **USB/MBR**
+layout above. FireWire-only devices do not pass the USB checks. Modern
+classic (6th/7th generation), shuffle, nano 2 and later, and touch are refused.
+The replacement cannot exceed the existing verified firmware image's size.
+This is not a repair path for blank disks or a missing/damaged firmware directory.
+
+LinTunes takes an immutable in-memory snapshot of the chosen file, checks its
+model tag and checksum before confirmation, and uses only a UDisks-verified,
+root-owned whole-disk `/dev/disk/by-id` alias. After confirmation it rechecks
+device identity and mount state before each ipodpatcher command. It reads the
+existing image before flashing, then compares a full readback with the selected
+image. **A failed firmware write or readback prevents FAT32 formatting.**
+Firmware writing may already have changed the device when a failure is reported;
+formatting may already have erased user data if a later initialization fails.
+After verification, UDisks creates FAT32 and libgpod initializes/verifies the
+music database. **libgpod is not a firmware flasher.**
 
 **Apple partition maps are not automatically converted.** HFS/HFS+ often comes
 with an Apple partition map; simply formatting that partition is not enough to
@@ -162,8 +202,8 @@ means the disk was unchanged.
 bash tests/run-ipod-safety.sh
 ```
 
-The tests simulate filesystems and UDisks replies. They never format a disk or
-contact the real system UDisks service.
+The tests simulate filesystems, UDisks replies, and all firmware subprocesses.
+They never format a disk, contact real UDisks, or execute pkexec/ipodpatcher.
 
 ### Restoring an iPod
 
@@ -171,8 +211,9 @@ contact the real system UDisks service.
 
 - iPod touch: an Apple-signed `.ipsw` file via `idevicerestore`, targeted to
   the single UDID reported by `idevice_id`.
-- Classic/nano/mini/shuffle firmware flashing is intentionally unavailable:
-  stock `ipodpatcher` cannot bind a write to the device selected in LinTunes.
+- Disk-mode iPods: opens the device-selection and local-firmware FAT32 workflow
+  above. Only the listed older generations and existing USB/MBR layouts are
+  accepted; unsupported families/generations are refused before erasing.
 
 Install the matching restore tool separately. Restores erase the device and require
 typed confirmation. LinTunes never accepts a manually entered device path and never
@@ -226,7 +267,7 @@ Burning requires `wodim` (or `cdrecord`) to be installed.
 ## Project Structure
 
 ```
-LinTunes source/
+LinTunes/
 ├── CMakeLists.txt          — CMake build definition
 ├── README.md               — This file
 ├── resources/
