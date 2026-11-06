@@ -213,9 +213,3 @@ if [ "$SKIP_DEPS" -eq 0 ]; then
 else
     info "Skipping dependency installation (--skip-deps)."
 fi
-
-build
-install_system_wide
-if [[ -n "$PACKAGE_FORMAT" ]]; then
-    bash "$SCRIPT_DIR/packageLinux.sh" --build-dir "$BUILD_DIR" --format "$PACKAGE_FORMAT"
-fi
