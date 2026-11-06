@@ -83,6 +83,14 @@ chmod +x buildPod.sh
 
 Supported distributions: Ubuntu/Debian, Fedora/RHEL, Arch Linux.
 
+After a successful compilation, the script asks whether to install LinTunes
+system-wide. Enter `y` or `yes` to install the executable to `/usr/local/bin`
+along with its desktop launcher and documentation. Administrator authorization
+is requested through `sudo` unless already running as root. Existing files from
+a previous manual installation may be replaced. Press Enter, answer `n`, or
+close input to skip installation and keep the compiled executable in `build/`.
+Installation is never attempted when compilation fails.
+
 ### Option B — Manual build
 
 **1. Install dependencies**
