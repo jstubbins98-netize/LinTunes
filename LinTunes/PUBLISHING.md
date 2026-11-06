@@ -3,12 +3,12 @@
 LinTunes has two packaging paths:
 
 * `packageLinux.sh` packages an existing **native local build** for installation
-  with apt, dnf/zypper, or pacman.
-* `prepareRelease.py` prepares a **source release** and Fedora RPM and
-  AUR recipes for public distribution. It never uploads, signs, installs, or
+  with dnf/zypper, or as a manual TGZ archive.
+* `prepareRelease.py` prepares a **source release** and checksum
+  for public distribution. It never uploads, signs, installs, or
   submits anything.
 
-These recipes do not mean LinTunes is already in any public repository.
+These helpers do not mean LinTunes is already in any public repository.
 MacTunes and WinTunes are not included.
 
 ## 1. Release prerequisites
@@ -44,8 +44,6 @@ Output is `generated-artifacts/releases/1.0.0/`:
 
 * `lintunes-1.0.0.tar.gz`: source only, including GPL text and build instructions.
 * `SHA256SUMS`: source checksum.
-* `lintunes.spec`: Fedora-oriented source RPM recipe.
-* `PKGBUILD`: source-building AUR recipe with the actual SHA-256 checksum.
 
 An explicit source allowlist excludes other editions, build outputs, and
 workspace configuration. Existing output directories are refused rather than
@@ -59,24 +57,22 @@ The helper does not create or handle signing keys.
 
 ## 3. Fedora: dnf / yum
 
-Use a native Fedora machine with `rpm-build`, `rpmdevtools`, CMake/macros and
-the spec's BuildRequires available. VLC and some codecs may need additional
+Use a native Fedora machine with `rpm-build`, CMake, and the build dependencies
+listed in README.md. VLC and some codecs may need additional
 repositories depending on the distribution/version and its codec policies.
 
 ```sh
-rpmdev-setuptree
-cp lintunes-1.0.0.tar.gz ~/rpmbuild/SOURCES/
-cp lintunes.spec ~/rpmbuild/SPECS/
-rpmbuild -bs ~/rpmbuild/SPECS/lintunes.spec
-rpmbuild -ba ~/rpmbuild/SPECS/lintunes.spec
-rpmlint ~/rpmbuild/SPECS/lintunes.spec ~/rpmbuild/RPMS/*/lintunes-*.rpm
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+bash packageLinux.sh --format rpm
+rpmlint generated-artifacts/packages/lintunes-*.rpm
 ```
 
-For release validation, rebuild the source RPM with `mock` for each target
-Fedora release and architecture, then test the resulting RPM on that target.
+For release validation, rebuild on each target Fedora release and architecture,
+then test the resulting RPM on that target. Source RPM recipes are not supplied.
 Do not assume RHEL or openSUSE has identical package names/macros or available
 libgpod/VLC versions. The local CPack RPM path supports openSUSE plugin names,
-but this source spec targets Fedora and needs a separate port/review elsewhere.
+but each target still needs native validation.
 
 For a private/public dnf repository, sign RPMs with `rpmsign --addsign`,
 generate metadata with `createrepo_c`, and optionally sign `repodata/repomd.xml`.
@@ -86,8 +82,10 @@ subject to its policies. Fedora inclusion requires formal package review.
 
 ## 4. Arch: AUR / pacman
 
-The generated release `PKGBUILD` builds from the public source archive. The
-older `build/packaging/PKGBUILD` is **local-binary-only** and must not go to AUR.
+Arch/AUR recipes are no longer supplied. Build/install from source with
+`buildPod.sh`, or use a TGZ archive for manual installation. To publish to AUR,
+first write and review your own source-building `PKGBUILD`; the commands below
+assume you have done so.
 
 As a normal user on Arch, with `base-devel`, build dependencies and `namcap`:
 

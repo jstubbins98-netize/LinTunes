@@ -46,16 +46,14 @@ written to `generated-artifacts/packages/`; nothing is installed automatically.
 |--------|---------|---------|
 | Fedora / RHEL | `.rpm` | `sudo dnf install ./generated-artifacts/packages/lintunes-*.rpm` |
 | openSUSE | `.rpm` | `sudo zypper install ./generated-artifacts/packages/lintunes-*.rpm` |
-| Arch / Manjaro | `.pkg.tar.*` | `sudo pacman -U ./generated-artifacts/packages/lintunes-*.pkg.tar.*` |
 
 Use an exact filename if the directory contains multiple builds. RPM
-packaging requires `rpm-build`; Arch
-packaging requires `base-devel` and must not run as root. CMake/CPack are also
+packaging requires `rpm-build`. CMake/CPack are also
 required. The helper reports missing tools without installing them.
 
 `bash buildPod.sh --package` builds and packages in one step. To skip dependency
 installation, use `bash buildPod.sh --skip-deps --package`. You may explicitly
-select a format with `--package=rpm`, `--package=arch`, or
+select a format with `--package=rpm` or
 `--package=tgz`.
 
 The installed executable is `/usr/bin/lintunes`; the desktop launcher appears
@@ -67,7 +65,7 @@ untouched.
 
 Build on the destination distribution/release and architecture, not on another
 Linux system with incompatible shared libraries. Ubuntu, Debian, and other
-systems without RPM/Arch packaging default to a manual TGZ archive. Use
+systems without RPM packaging default to a manual TGZ archive. Use
 `bash packageLinux.sh --format tgz` only for manual archive installation;
 archives are not package-manager installations.
 

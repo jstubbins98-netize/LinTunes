@@ -39,6 +39,4 @@ set(CPACK_RPM_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
     "/usr/share/applications" "/usr/share/doc")
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/packaging/PKGBUILD.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/packaging/PKGBUILD" @ONLY)
 include(CPack)

@@ -11,7 +11,7 @@ BUILD="${1:-$ROOT/build}"
 BUILD="$(cd "$BUILD" && pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-bash -n "$ROOT/packageLinux.sh" "$ROOT/buildPod.sh" "$ROOT/packaging/PKGBUILD.in"
+bash -n "$ROOT/packageLinux.sh" "$ROOT/buildPod.sh"
 bash "$ROOT/packageLinux.sh" --help >"$TMP/help"
 grep -q -- '--format' "$TMP/help"
 if bash "$ROOT/packageLinux.sh" --format invalid >"$TMP/error" 2>&1; then
@@ -44,5 +44,9 @@ if grep -q 'CPACK_DEBIAN_' "$BUILD/CPackConfig.cmake"; then
   exit 1
 fi
 grep -q 'CPACK_RPM_PACKAGE_AUTOREQPROV "yes"' "$BUILD/CPackConfig.cmake"
-grep -q 'pkgname=lintunes' "$BUILD/packaging/PKGBUILD"
+if bash "$ROOT/packageLinux.sh" --format arch >"$TMP/error" 2>&1; then
+  echo "Removed Arch format was incorrectly accepted." >&2
+  exit 1
+fi
+grep -q 'Unsupported format' "$TMP/error"
 echo "PASS: helper arguments, /usr install layout, desktop entry and native package configuration."

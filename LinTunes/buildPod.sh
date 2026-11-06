@@ -188,10 +188,10 @@ for arg in "$@"; do
     case "$arg" in
         --skip-deps|-s) SKIP_DEPS=1 ;;
         --package) PACKAGE_FORMAT=auto ;;
-        --package=rpm|--package=arch|--package=tgz)
+        --package=rpm|--package=tgz)
             PACKAGE_FORMAT="${arg#--package=}" ;;
         --help|-h)
-            echo "Usage: $0 [--skip-deps] [--package[=rpm|arch|tgz]]"
+            echo "Usage: $0 [--skip-deps] [--package[=rpm|tgz]]"
             echo "  --skip-deps / -s   Skip package installation, go straight to build"
             echo "  --package          Generate a local package; system-wide installation still requires confirmation"
             exit 0

@@ -35,7 +35,6 @@ with tempfile.TemporaryDirectory() as temp:
     assert archive.read_bytes() == (base / "two" / VERSION / archive.name).read_bytes()
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     assert (out / "SHA256SUMS").read_text() == f"{digest}  {archive.name}\n"
-    assert digest in (out / "PKGBUILD").read_text()
     assert generate(base / "one").returncode != 0
     assert generate(base / "bad", "--maintainer", "Name $(bad) <x@example.org>").returncode != 0
     assert generate(base / "bad", "--homepage", "https://example.org/%bad").returncode != 0
@@ -51,6 +50,6 @@ with tempfile.TemporaryDirectory() as temp:
             assert "@VERSION@" not in recipe.read_text()
     assert not (out / "debian").exists()
     assert not any("/debian/" in name for name in names)
-    assert (out / "lintunes.spec").is_file()
-    subprocess.run(["bash", "-n", str(out / "PKGBUILD")], check=True)
-print("PASS: deterministic source archive, recipes, checksums, layout, and invalid-input/overwrite guards.")
+    assert not any("/packaging/" in name for name in names)
+    assert sorted(p.name for p in out.iterdir()) == ["SHA256SUMS", archive.name]
+print("PASS: deterministic source archive, checksums, layout, and invalid-input/overwrite guards.")
