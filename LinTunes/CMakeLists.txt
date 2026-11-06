@@ -139,8 +139,6 @@ install(FILES README.md manual.md PUBLISHING.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/lintunes)
 install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/lintunes)
 
-include(cmake/Packaging.cmake)
-
 # ── Summary ───────────────────────────────────────────────────────────────────
 message(STATUS "Build type  : ${CMAKE_BUILD_TYPE}")
 message(STATUS "GTK3        : ${GTK3_VERSION}")
