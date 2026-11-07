@@ -30,45 +30,6 @@ LinTunes is a full-featured music manager for Linux, designed to work and feel l
 
 ## 1. Installation
 
-### Install a locally built package (recommended)
-
-After building on the target Linux computer, run:
-
-```bash
-cd LinTunes
-bash packageLinux.sh
-```
-
-This packages the existing build and prints an installation command. Output is
-written to `generated-artifacts/packages/`; nothing is installed automatically.
-
-| System | Package | Install |
-|--------|---------|---------|
-| Fedora / RHEL | `.rpm` | `sudo dnf install ./generated-artifacts/packages/lintunes-*.rpm` |
-| openSUSE | `.rpm` | `sudo zypper install ./generated-artifacts/packages/lintunes-*.rpm` |
-
-Use an exact filename if the directory contains multiple builds. RPM
-packaging requires `rpm-build`. CMake/CPack are also
-required. The helper reports missing tools without installing them.
-
-`bash buildPod.sh --package` builds and packages in one step. To skip dependency
-installation, use `bash buildPod.sh --skip-deps --package`. You may explicitly
-select a format with `--package=rpm` or
-`--package=tgz`.
-
-The installed executable is `/usr/bin/lintunes`; the desktop launcher appears
-in the application menu. Documentation is in `/usr/share/doc/lintunes`. Your
-personal library and music remain in your user directories. Upgrade by
-installing a newly built package. Uninstall with your package manager's normal
-remove command for `lintunes`; this leaves personal music and library data
-untouched.
-
-Build on the destination distribution/release and architecture, not on another
-Linux system with incompatible shared libraries. Ubuntu, Debian, and other
-systems without RPM packaging default to a manual TGZ archive. Use
-`bash packageLinux.sh --format tgz` only for manual archive installation;
-archives are not package-manager installations.
-
 ### Option A — Automated build script
 
 The easiest way to install LinTunes is with the included build script. It detects your Linux distribution, installs all required packages, and compiles the program in one step.
