@@ -89,7 +89,7 @@ sudo apt update && sudo apt install git
 # clone this repo
 git clone https://github.com/jstubbins98-netize/LinTunes.git
 
-# change the directory to the LinTunes source directory
+# change to the LinTunes source directory
 cd ~/LinTunes/LinTunes
 
 # compile
