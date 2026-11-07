@@ -88,16 +88,16 @@ sudo pacman -S --needed \
 # for Debian/Ubuntu:
 sudo apt update && sudo apt install git -y
 
-# for Fedora / RHEL
+# for Fedora / RHEL:
 sudo dnf install -y git
 
-# for Arch/Manjaro
+# for Arch/Manjaro:
 sudo pacman -S --noconfirm git
 
-# for openSUSE
+# for openSUSE:
 sudo zypper install -y git
 
-# for Alpine Linux
+# for Alpine Linux:
 sudo apk add git
 
 # after Installation finishes verify Git installed correctly with:
