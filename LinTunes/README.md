@@ -85,7 +85,7 @@ sudo pacman -S --needed \
 # clone this repo
 git clone https://github.com/jstubbins98-netize/LinTunes.git
 # change the directory to the LinTunes source directory
-cd LinTunes
+cd ~/LinTunes/LinTunes
 
 # compile
 mkdir build && cd build
