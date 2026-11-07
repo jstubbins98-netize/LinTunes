@@ -82,6 +82,10 @@ sudo pacman -S --needed \
 ## Building
 
 ```bash
+# install git on your Linux device using your package manager
+# example for Debian/Ubuntu:
+sudo apt update && sudo apt install git
+
 # clone this repo
 git clone https://github.com/jstubbins98-netize/LinTunes.git
 
