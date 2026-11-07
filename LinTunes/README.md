@@ -94,12 +94,6 @@ sudo dnf install -y git
 # for Arch:
 sudo pacman -S --noconfirm git
 
-# for openSUSE:
-sudo zypper install -y git
-
-# for Alpine Linux:
-sudo apk add git
-
 # after Installation finishes verify Git installed correctly with:
 git --version
 
