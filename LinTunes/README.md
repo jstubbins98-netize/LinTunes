@@ -82,9 +82,12 @@ sudo pacman -S --needed \
 ## Building
 
 ```bash
+# clone this repo
 git clone https://github.com/jstubbins98-netize/LinTunes.git
+# change the directory to the LinTunes source directory
 cd LinTunes
 
+# compile
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
