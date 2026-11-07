@@ -313,8 +313,5 @@ LinTunes/
 ```
 
 ## License
-<<<<<<< HEAD
 GNU GENERAL PUBLIC LICENSE Version 3 - see `LICENSE` file for details.
-=======
-GNU GENERAL PUBLIC LICENSE Version 3 - see `LICENSE` file for details.
->>>>>>> cc4de79e87f2c7cacd7148c01081baefd2b6dea5
+
