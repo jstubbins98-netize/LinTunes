@@ -313,5 +313,4 @@ LinTunes/
 ```
 
 ## License
-
-GPL-3.0 or later
+GNU GENERAL PUBLIC LICENSE Version 3 - see `LICENSE` file for details.
