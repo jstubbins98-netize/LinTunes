@@ -83,9 +83,25 @@ sudo pacman -S --needed \
 
 ```bash
 # install Git on your Linux device using your package manager
-# for example on Debian/Ubuntu:
-sudo apt update && sudo apt install git -y
 # Note: if you have already installed Git skip to the cloning part.
+
+# for Debian / Ubuntu:
+sudo apt update && sudo apt install git -y
+
+# for Fedora / RHEL:
+sudo dnf install -y git
+
+# for Arch:
+sudo pacman -S --noconfirm git
+
+# for openSUSE:
+sudo zypper install -y git
+
+# for Alpine Linux:
+sudo apk add git
+
+# after Installation finishes verify Git installed correctly with:
+git --version
 
 # clone this repo
 git clone https://github.com/jstubbins98-netize/LinTunes.git
@@ -297,5 +313,8 @@ LinTunes/
 ```
 
 ## License
-
-GPL-3.0 or later
+<<<<<<< HEAD
+GNU GENERAL PUBLIC LICENSE Version 3 - see `LICENSE` file for details.
+=======
+GNU GENERAL PUBLIC LICENSE Version 3 - see `LICENSE` file for details.
+>>>>>>> cc4de79e87f2c7cacd7148c01081baefd2b6dea5

@@ -143,7 +143,6 @@ build() {
     success "Build complete!  Binary: $BUILD_DIR/lintunes"
     echo
     echo -e "  Run:  ${BOLD}$BUILD_DIR/lintunes${RESET}"
-    echo -e "  Package for your package manager: ${BOLD}bash \"$SCRIPT_DIR/packageLinux.sh\"${RESET}"
 }
 
 install_system_wide() {
@@ -183,17 +182,12 @@ install_system_wide() {
 
 # ── Entry point ────────────────────────────────────────────────────────────────
 SKIP_DEPS=0
-PACKAGE_FORMAT=""
 for arg in "$@"; do
     case "$arg" in
         --skip-deps|-s) SKIP_DEPS=1 ;;
-        --package) PACKAGE_FORMAT=auto ;;
-        --package=rpm|--package=tgz)
-            PACKAGE_FORMAT="${arg#--package=}" ;;
         --help|-h)
-            echo "Usage: $0 [--skip-deps] [--package[=rpm|tgz]]"
+            echo "Usage: $0 [--skip-deps]"
             echo "  --skip-deps / -s   Skip package installation, go straight to build"
-            echo "  --package          Generate a local package; system-wide installation still requires confirmation"
             exit 0
             ;;
         *) die "Unknown argument: $arg" ;;
@@ -213,3 +207,6 @@ if [ "$SKIP_DEPS" -eq 0 ]; then
 else
     info "Skipping dependency installation (--skip-deps)."
 fi
+
+build
+install_system_wide
