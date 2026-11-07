@@ -85,13 +85,13 @@ sudo pacman -S --needed \
 # install Git on your Linux device using your package manager
 # Note: if you have already installed Git skip to the cloning part.
 
-# for Debian/Ubuntu:
+# for Debian / Ubuntu:
 sudo apt update && sudo apt install git -y
 
 # for Fedora / RHEL:
 sudo dnf install -y git
 
-# for Arch/Manjaro:
+# for Arch:
 sudo pacman -S --noconfirm git
 
 # for openSUSE:
