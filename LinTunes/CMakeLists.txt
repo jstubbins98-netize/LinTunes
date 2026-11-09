@@ -135,6 +135,9 @@ install(TARGETS lintunes RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES resources/lintunes.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
 )
+install(FILES LinTunes_icon/lintunes.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
+)
 install(FILES README.md manual.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/lintunes)
 install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/lintunes)
